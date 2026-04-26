@@ -17,6 +17,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _phoneCtrl = TextEditingController(text: '+62 812-3456-7890');
   final _addressCtrl =
       TextEditingController(text: 'Jl. Gebang Putih No.10, Surabaya');
+  final _deviceIdCtrl = TextEditingController(text: 'VS-2024-001X');
 
   final _oldPassCtrl = TextEditingController();
   final _newPassCtrl = TextEditingController();
@@ -31,6 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
     _addressCtrl.dispose();
+    _deviceIdCtrl.dispose();
     _oldPassCtrl.dispose();
     _newPassCtrl.dispose();
     _confirmPassCtrl.dispose();
@@ -248,6 +250,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                         ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Device Information
+                _SectionCard(
+                  title: 'Device Information',
+                  children: [
+                    if (_isEditing) ...[
+                      _EditField(
+                        label: 'VoxSight Device ID',
+                        controller: _deviceIdCtrl,
+                        icon: Icons.memory_outlined,
+                      ),
+                    ] else ...[
+                      _InfoRow(
+                        icon: Icons.memory_outlined,
+                        label: 'VoxSight Device ID',
+                        value: _deviceIdCtrl.text,
                       ),
                     ],
                   ],

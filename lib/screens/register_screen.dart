@@ -18,6 +18,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _phoneCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
+  final _deviceIdCtrl = TextEditingController();
   bool _isLoading = false;
   String _selectedRole = 'Pendamping';
 
@@ -56,6 +57,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _phoneCtrl.dispose();
     _passCtrl.dispose();
     _confirmCtrl.dispose();
+    _deviceIdCtrl.dispose();
     super.dispose();
   }
 
@@ -159,6 +161,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         keyboardType: TextInputType.phone,
                         validator: (v) =>
                             v!.isEmpty ? 'Phone is required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      _label('Device ID'),
+                      const SizedBox(height: 8),
+                      CustomTextField(
+                        hint: 'Enter your VoxSight Device ID',
+                        prefixIcon: Icons.memory_outlined,
+                        controller: _deviceIdCtrl,
+                        validator: (v) => null, // Opsional
                       ),
                       const SizedBox(height: 16),
                       _label('Role'),

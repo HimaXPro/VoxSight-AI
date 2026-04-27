@@ -14,21 +14,30 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  // GlobalKey untuk validasi form login
   final _formKey = GlobalKey<FormState>();
+  // Controller untuk input email dengan nilai default (opsional)
   final _emailCtrl = TextEditingController(text: 'user@voxsight.com');
+  // Controller untuk input password dengan nilai default (opsional)
   final _passCtrl = TextEditingController(text: '••••••••');
+  // Indikator loading saat proses login
   bool _isLoading = false;
 
+  // Fungsi untuk menangani proses login
   void _login() async {
+    // Validasi input pada form
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
+      // Simulasi proses jaringan (delay)
       await Future.delayed(const Duration(milliseconds: 1500));
       if (mounted) {
         setState(() => _isLoading = false);
+        // Navigasi ke halaman utama jika berhasil login (MainNavigator)
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
             pageBuilder: (_, __, ___) => const MainNavigator(),
+            // Animasi transisi fade saat berpindah halaman
             transitionsBuilder: (_, anim, __, child) =>
                 FadeTransition(opacity: anim, child: child),
             transitionDuration: const Duration(milliseconds: 400),
@@ -40,6 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    // Hapus controller dari memori setelah tidak digunakan
     _emailCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
@@ -54,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              // Bagian Header Login (Gradien dan Logo)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(28, 40, 28, 36),
@@ -62,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [AppColors.primaryDark, AppColors.primary],
+                    colors: [AppColors.primaryDark, AppColors.primary], // Warna gradien utama
                   ),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(32),
@@ -72,6 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Ikon dan Nama Aplikasi
                     Row(
                       children: [
                         Container(
@@ -99,6 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                     const SizedBox(height: 32),
+                    // Teks Sambutan
                     Text(
                       'Welcome Back!',
                       style: GoogleFonts.poppins(
@@ -119,15 +131,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              // Form
+              // Bagian Form Input (Email dan Password)
               Padding(
                 padding: const EdgeInsets.all(24),
                 child: Form(
-                  key: _formKey,
+                  key: _formKey, // Key untuk melacak status validasi form
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 8),
+                      // Label Input Email
                       Text(
                         'Email Address',
                         style: GoogleFonts.poppins(
@@ -137,6 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
+                      // Input TextField Email
                       CustomTextField(
                         hint: 'Enter your email',
                         prefixIcon: Icons.email_outlined,
@@ -144,9 +158,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         keyboardType: TextInputType.emailAddress,
                         validator: (v) => (v == null || v.isEmpty)
                             ? 'Email is required'
-                            : null,
+                            : null, // Validasi input kosong
                       ),
                       const SizedBox(height: 18),
+                      // Label Input Password
                       Text(
                         'Password',
                         style: GoogleFonts.poppins(
@@ -156,23 +171,25 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
+                      // Input TextField Password
                       CustomTextField(
                         hint: 'Enter your password',
                         prefixIcon: Icons.lock_outline,
-                        isPassword: true,
+                        isPassword: true, // Ubah teks menjadi titik-titik
                         controller: _passCtrl,
                         validator: (v) => (v == null || v.isEmpty)
                             ? 'Password is required'
-                            : null,
+                            : null, // Validasi input kosong
                       ),
                       const SizedBox(height: 10),
+                      // Tombol Lupa Password
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const ForgotPasswordScreen(),
+                              builder: (_) => const ForgotPasswordScreen(), // Pindah ke halaman Forgot Password
                             ),
                           ),
                           child: Text(
@@ -186,12 +203,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
+                      // Tombol Submit Sign In
                       PrimaryButton(
                         text: 'Sign In',
-                        onPressed: _login,
-                        isLoading: _isLoading,
+                        onPressed: _login, // Jalankan fungsi _login saat ditekan
+                        isLoading: _isLoading, // Tampilkan indikator loading jika true
                         icon: Icons.login_rounded,
                       ),
+                      // Divider dengan teks "OR"
                       Row(
                         children: [
                           const Expanded(child: Divider()),
@@ -209,13 +228,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                       const SizedBox(height: 28),
-                      // Don't have account
+                      // Bagian Tautan untuk Mendaftar (Sign Up)
                       Center(
                         child: GestureDetector(
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const RegisterScreen(),
+                              builder: (_) => const RegisterScreen(), // Pindah ke halaman Register
                             ),
                           ),
                           child: RichText(

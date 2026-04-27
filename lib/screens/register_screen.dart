@@ -12,24 +12,33 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  // Key untuk validasi form pendaftaran
   final _formKey = GlobalKey<FormState>();
+  // Controller untuk masing-masing field input
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   final _deviceIdCtrl = TextEditingController();
+  // Status loading saat pendaftaran berlangsung
   bool _isLoading = false;
+  // Menyimpan peran/role yang dipilih pengguna
   String _selectedRole = 'Pendamping';
 
+  // Daftar pilihan role yang tersedia
   final List<String> _roles = ['Pengguna (Netra)', 'Pendamping', 'Guru'];
 
+  // Fungsi untuk memproses pendaftaran
   void _register() async {
+    // Validasi semua field yang diperlukan
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
+      // Simulasi proses jaringan
       await Future.delayed(const Duration(milliseconds: 1500));
       if (mounted) {
         setState(() => _isLoading = false);
+        // Menampilkan pesan sukses pendaftaran
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -42,6 +51,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
+        // Navigasi ke halaman login setelah registrasi berhasil
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -52,6 +62,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
+    // Bersihkan semua controller untuk menghindari memory leak
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
@@ -70,7 +81,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              // Bagian Header (Gradien dan Tombol Kembali)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(28, 28, 28, 32),
@@ -78,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [AppColors.primaryDark, AppColors.primary],
+                    colors: [AppColors.primaryDark, AppColors.primary], // Gradien utama
                   ),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(32),
@@ -88,6 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Tombol Kembali
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: Container(
@@ -102,6 +114,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
+                    // Judul Layar
                     Text(
                       'Create Account',
                       style: GoogleFonts.poppins(
@@ -111,6 +124,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 6),
+                    // Sub-judul
                     Text(
                       'Register to start using VoxSight AI',
                       style: GoogleFonts.poppins(
@@ -122,26 +136,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
 
-              // Form
+              // Bagian Form Input
               Padding(
                 padding: const EdgeInsets.all(24),
                 child: Form(
-                  key: _formKey,
+                  key: _formKey, // Key form untuk keperluan validasi
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 4),
-                      _label('Full Name'),
+                      _label('Full Name'), // Input Nama Lengkap
                       const SizedBox(height: 8),
                       CustomTextField(
                         hint: 'Enter your full name',
                         prefixIcon: Icons.person_outline,
                         controller: _nameCtrl,
                         validator: (v) =>
-                            v!.isEmpty ? 'Name is required' : null,
+                            v!.isEmpty ? 'Name is required' : null, // Validasi kosong
                       ),
                       const SizedBox(height: 16),
-                      _label('Email Address'),
+                      _label('Email Address'), // Input Email
                       const SizedBox(height: 8),
                       CustomTextField(
                         hint: 'Enter your email',
@@ -152,7 +166,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             v!.isEmpty ? 'Email is required' : null,
                       ),
                       const SizedBox(height: 16),
-                      _label('Phone Number'),
+                      _label('Phone Number'), // Input Nomor HP
                       const SizedBox(height: 8),
                       CustomTextField(
                         hint: 'Enter your phone number',
@@ -163,16 +177,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             v!.isEmpty ? 'Phone is required' : null,
                       ),
                       const SizedBox(height: 16),
-                      _label('Device ID'),
+                      _label('Device ID'), // Input Device ID (Opsional)
                       const SizedBox(height: 8),
                       CustomTextField(
                         hint: 'Enter your VoxSight Device ID',
                         prefixIcon: Icons.memory_outlined,
                         controller: _deviceIdCtrl,
-                        validator: (v) => null, // Opsional
+                        validator: (v) => null, // Tidak wajib diisi
                       ),
                       const SizedBox(height: 16),
-                      _label('Role'),
+                      _label('Role'), // Dropdown Pemilihan Role
                       const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -203,7 +217,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _label('Password'),
+                      _label('Password'), // Input Password
                       const SizedBox(height: 8),
                       CustomTextField(
                         hint: 'Create a password',
@@ -212,10 +226,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _passCtrl,
                         validator: (v) => v!.length < 6
                             ? 'Min 6 characters'
-                            : null,
+                            : null, // Minimal 6 karakter
                       ),
                       const SizedBox(height: 16),
-                      _label('Confirm Password'),
+                      _label('Confirm Password'), // Input Konfirmasi Password
                       const SizedBox(height: 8),
                       CustomTextField(
                         hint: 'Repeat your password',
@@ -224,9 +238,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _confirmCtrl,
                         validator: (v) => v != _passCtrl.text
                             ? 'Passwords do not match'
-                            : null,
+                            : null, // Pastikan sama dengan password
                       ),
                       const SizedBox(height: 28),
+                      // Tombol Mendaftar
                       PrimaryButton(
                         text: 'Create Account',
                         onPressed: _register,
@@ -234,6 +249,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         icon: Icons.person_add_outlined,
                       ),
                       const SizedBox(height: 20),
+                      // Tautan Kembali ke Login
                       Center(
                         child: GestureDetector(
                           onTap: () => Navigator.pop(context),

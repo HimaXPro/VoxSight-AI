@@ -12,6 +12,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  // Controller untuk menyimpan dan mengedit informasi personal
   final _nameCtrl = TextEditingController(text: 'Ahmad Faruq');
   final _emailCtrl = TextEditingController(text: 'ahmad.faruq@slb-ypab.sch.id');
   final _phoneCtrl = TextEditingController(text: '+62 812-3456-7890');
@@ -19,15 +20,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       TextEditingController(text: 'Jl. Gebang Putih No.10, Surabaya');
   final _deviceIdCtrl = TextEditingController(text: 'VS-2024-001X');
 
+  // Controller untuk fitur ubah password
   final _oldPassCtrl = TextEditingController();
   final _newPassCtrl = TextEditingController();
   final _confirmPassCtrl = TextEditingController();
 
+  // Status apakah mode edit sedang aktif
   bool _isEditing = false;
+  // Status apakah email sudah diverifikasi
   bool _isEmailVerified = false;
 
   @override
   void dispose() {
+    // Membersihkan semua controller untuk menghindari memory leak
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
@@ -39,7 +44,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
+  // Fungsi untuk mensimulasikan proses verifikasi email
   void _verifyEmail() async {
+    // Menampilkan loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -47,10 +54,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: CircularProgressIndicator(),
       ),
     );
+    // Simulasi delay jaringan
     await Future.delayed(const Duration(seconds: 1));
     if (mounted) {
-      Navigator.pop(context); // Close dialog
+      Navigator.pop(context); // Tutup dialog loading
       setState(() => _isEmailVerified = true);
+      // Menampilkan notifikasi sukses verifikasi
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -66,8 +75,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // Fungsi untuk menyimpan perubahan profil
   void _saveProfile() {
-    setState(() => _isEditing = false);
+    setState(() => _isEditing = false); // Nonaktifkan mode edit
+    // Tampilkan notifikasi berhasil disimpan
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -87,12 +98,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          // Profile Header
+          // Header Profil dengan Efek Sliver (Animasi scroll)
           SliverAppBar(
-            expandedHeight: 200,
-            pinned: true,
+            expandedHeight: 200, // Tinggi maksimal header
+            pinned: true, // Header tetap di atas saat di-scroll
             backgroundColor: AppColors.primary,
             actions: [
+              // Tombol Edit/Save Profil
               IconButton(
                 icon: Icon(
                   _isEditing ? Icons.check : Icons.edit_outlined,
@@ -100,9 +112,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 onPressed: () {
                   if (_isEditing) {
-                    _saveProfile();
+                    _saveProfile(); // Simpan jika sedang dalam mode edit
                   } else {
-                    setState(() => _isEditing = true);
+                    setState(() => _isEditing = true); // Masuk ke mode edit
                   }
                 },
               ),
@@ -121,6 +133,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const SizedBox(height: 20),
+                      // Avatar Pengguna
                       Stack(
                         children: [
                           Container(
@@ -135,6 +148,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: const Icon(Icons.person,
                                 color: Colors.white, size: 42),
                           ),
+                          // Ikon kamera muncul hanya saat mode edit
                           if (_isEditing)
                             Positioned(
                               bottom: 0,
@@ -155,6 +169,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
+                      // Nama Pengguna
                       Text(
                         _nameCtrl.text,
                         style: GoogleFonts.poppins(
@@ -163,6 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: Colors.white,
                         ),
                       ),
+                      // Peran dan Institusi Pengguna
                       Text(
                         'Pendamping • SLB A YPAB',
                         style: GoogleFonts.poppins(
@@ -181,10 +197,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: const EdgeInsets.all(20),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                // Personal Information
+                // Bagian Informasi Personal
                 _SectionCard(
                   title: 'Personal Information',
                   children: [
+                    // Tampilkan form input jika mode edit aktif, sebaliknya tampilkan teks
                     if (_isEditing) ...[
                       _EditField(
                           label: 'Full Name',
@@ -202,6 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           controller: _addressCtrl,
                           icon: Icons.home_outlined),
                       const SizedBox(height: 12),
+                      // Field email dengan fitur verifikasi
                       _EditFieldWithVerification(
                         label: 'Email',
                         controller: _emailCtrl,
@@ -210,6 +228,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onVerify: _verifyEmail,
                       ),
                     ] else ...[
+                      // Mode baca (readonly) untuk menampilkan informasi
                       _InfoRow(
                           icon: Icons.person_outline,
                           label: 'Full Name',
@@ -225,6 +244,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           label: 'Address',
                           value: _addressCtrl.text),
                       const Divider(height: 20),
+                      // Tampilan email dengan status verifikasinya
                       _InfoRow(
                         icon: Icons.email_outlined,
                         label: 'Email',
@@ -330,12 +350,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Logout
+                // Tombol Logout
                 SizedBox(
                   width: double.infinity,
                   height: 54,
                   child: OutlinedButton.icon(
                     onPressed: () {
+                      // Hapus semua rute sebelumnya dan navigasi ke halaman Login
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(

@@ -11,16 +11,23 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  // GlobalKey digunakan untuk memvalidasi state dari Form
   final _formKey = GlobalKey<FormState>();
+  // Controller untuk mengambil teks inputan email
   final _emailCtrl = TextEditingController();
+  // Menyimpan status loading saat proses pengiriman link reset
   bool _isLoading = false;
 
+  // Fungsi untuk mengirimkan link reset password
   void _sendResetLink() async {
+    // Memeriksa apakah inputan pada form sudah valid
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
+      // Mensimulasikan proses jaringan dengan delay
       await Future.delayed(const Duration(milliseconds: 1500));
       if (mounted) {
         setState(() => _isLoading = false);
+        // Menampilkan pesan sukses menggunakan SnackBar
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -34,6 +41,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
           ),
         );
+        // Kembali ke halaman sebelumnya setelah berhasil
         Navigator.pop(context);
       }
     }
@@ -41,6 +49,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   void dispose() {
+    // Membersihkan controller untuk mencegah kebocoran memori (memory leak)
     _emailCtrl.dispose();
     super.dispose();
   }
@@ -48,13 +57,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background, // Latar belakang utama layar
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              // Bagian Header dengan Gradien
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(28, 28, 28, 32),
@@ -72,6 +81,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Tombol Kembali
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: Container(
@@ -86,6 +96,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
+                    // Judul Header
                     Text(
                       'Reset Password',
                       style: GoogleFonts.poppins(
@@ -95,6 +106,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       ),
                     ),
                     const SizedBox(height: 6),
+                    // Deskripsi Bawah Judul
                     Text(
                       'Enter your email to receive a password reset link',
                       style: GoogleFonts.poppins(
@@ -106,11 +118,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
               ),
 
-              // Form
+              // Bagian Form Input
               Padding(
                 padding: const EdgeInsets.all(24),
                 child: Form(
-                  key: _formKey,
+                  key: _formKey, // Key untuk form validasi
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -124,6 +136,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
+                      // Input TextField untuk Email
                       CustomTextField(
                         hint: 'Enter your email',
                         prefixIcon: Icons.email_outlined,
@@ -131,13 +144,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         keyboardType: TextInputType.emailAddress,
                         validator: (v) => (v == null || v.isEmpty)
                             ? 'Email is required'
-                            : null,
+                            : null, // Validasi tidak boleh kosong
                       ),
                       const SizedBox(height: 32),
+                      // Tombol Submit Reset Link
                       PrimaryButton(
                         text: 'Send Reset Link',
                         onPressed: _sendResetLink,
-                        isLoading: _isLoading,
+                        isLoading: _isLoading, // Tampilkan loading indicator jika true
                         icon: Icons.send_outlined,
                       ),
                     ],

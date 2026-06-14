@@ -1,0 +1,7 @@
+- [ ] Backend: Replace forgot-password implementation to generate 6-digit OTP resetCode (no nodemailer) and store in-memory with expiry.
+- [ ] Backend: Add endpoint POST /api/auth/reset-password to validate OTP + update password.
+- [ ] Backend: Update routes auth.routes.js to include reset-password endpoint.
+- [ ] Frontend: Update forgot_password_screen.dart to 2-step flow:
+  - Step A: request OTP (email) -> show snackbar with OTP and navigate to Step B
+  - Step B: input OTP + new password + confirm -> call reset-password endpoint -> navigate to LoginScreen
+- [ ] Run backend + Flutter: verify critical-path flows still work (login/profile/logout, change-password, forgot/reset OTP).

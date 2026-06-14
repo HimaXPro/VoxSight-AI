@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../utils/app_theme.dart';
 import '../widgets/common_widgets.dart';
+import '../services/api_service.dart';
+import '../utils/token_storage.dart';
 import 'main_navigator.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
@@ -17,32 +19,73 @@ class _LoginScreenState extends State<LoginScreen> {
   // GlobalKey untuk validasi form login
   final _formKey = GlobalKey<FormState>();
   // Controller untuk input email dengan nilai default (opsional)
-  final _emailCtrl = TextEditingController(text: 'user@voxsight.com');
+  final _emailCtrl = TextEditingController(text: '');
   // Controller untuk input password dengan nilai default (opsional)
-  final _passCtrl = TextEditingController(text: '••••••••');
+  final _passCtrl = TextEditingController(text: '');
   // Indikator loading saat proses login
   bool _isLoading = false;
 
   // Fungsi untuk menangani proses login
   void _login() async {
-    // Validasi input pada form
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      // Simulasi proses jaringan (delay)
-      await Future.delayed(const Duration(milliseconds: 1500));
-      if (mounted) {
+      try {
+        final api = await ApiService.postJson(
+          '/api/auth/login',
+          body: {
+            'email': _emailCtrl.text.trim(),
+            'password': _passCtrl.text,
+          },
+        );
+
+        if (api['success'] != true) {
+          final msg = api['message']?.toString() ?? 'Login gagal';
+          if (mounted) {
+            setState(() => _isLoading = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(msg), backgroundColor: AppColors.accentRed),
+            );
+          }
+          return;
+        }
+
+        final token = api['data']?['token']?.toString();
+        if (token == null || token.isEmpty) {
+          if (mounted) {
+            setState(() => _isLoading = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Token tidak ditemukan'),
+                  backgroundColor: AppColors.accentRed),
+            );
+          }
+          return;
+        }
+
+        await TokenStorage.saveToken(token);
+
+        if (!mounted) return;
         setState(() => _isLoading = false);
-        // Navigasi ke halaman utama jika berhasil login (MainNavigator)
+
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
             pageBuilder: (_, __, ___) => const MainNavigator(),
-            // Animasi transisi fade saat berpindah halaman
             transitionsBuilder: (_, anim, __, child) =>
                 FadeTransition(opacity: anim, child: child),
             transitionDuration: const Duration(milliseconds: 400),
           ),
         );
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Terjadi kesalahan: $e'),
+                backgroundColor: AppColors.accentRed),
+          );
+        }
       }
     }
   }
@@ -72,7 +115,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [AppColors.primaryDark, AppColors.primary], // Warna gradien utama
+                    colors: [
+                      AppColors.primaryDark,
+                      AppColors.primary
+                    ], // Warna gradien utama
                   ),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(32),
@@ -189,7 +235,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const ForgotPasswordScreen(), // Pindah ke halaman Forgot Password
+                              builder: (_) =>
+                                  const ForgotPasswordScreen(), // Pindah ke halaman Forgot Password
                             ),
                           ),
                           child: Text(
@@ -206,8 +253,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Tombol Submit Sign In
                       PrimaryButton(
                         text: 'Sign In',
-                        onPressed: _login, // Jalankan fungsi _login saat ditekan
-                        isLoading: _isLoading, // Tampilkan indikator loading jika true
+                        onPressed:
+                            _login, // Jalankan fungsi _login saat ditekan
+                        isLoading:
+                            _isLoading, // Tampilkan indikator loading jika true
                         icon: Icons.login_rounded,
                       ),
                       // Divider dengan teks "OR"
@@ -234,7 +283,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const RegisterScreen(), // Pindah ke halaman Register
+                              builder: (_) =>
+                                  const RegisterScreen(), // Pindah ke halaman Register
                             ),
                           ),
                           child: RichText(

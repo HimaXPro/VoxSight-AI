@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/api_service.dart';
 import '../utils/app_theme.dart';
+import '../utils/token_storage.dart';
 import '../widgets/common_widgets.dart';
 import 'login_screen.dart';
 
@@ -13,12 +15,11 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   // Controller untuk menyimpan dan mengedit informasi personal
-  final _nameCtrl = TextEditingController(text: 'Ahmad Faruq');
-  final _emailCtrl = TextEditingController(text: 'ahmad.faruq@slb-ypab.sch.id');
-  final _phoneCtrl = TextEditingController(text: '+62 812-3456-7890');
-  final _addressCtrl =
-      TextEditingController(text: 'Jl. Gebang Putih No.10, Surabaya');
-  final _deviceIdCtrl = TextEditingController(text: 'VS-2024-001X');
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _addressCtrl = TextEditingController();
+  final _deviceIdCtrl = TextEditingController();
 
   // Controller untuk fitur ubah password
   final _oldPassCtrl = TextEditingController();
@@ -44,9 +45,150 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
-  // Fungsi untuk mensimulasikan proses verifikasi email
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  void _loadProfile() async {
+    try {
+      final api = await ApiService.getJson('/api/users/profile', auth: true);
+
+      if (!mounted) return;
+
+      if (api['success'] == true && api['data'] is Map) {
+        final data = api['data'] as Map<String, dynamic>;
+        final fullName = data['fullName']?.toString().trim().isNotEmpty == true
+            ? data['fullName']?.toString() ?? ''
+            : (data['full_name']?.toString().trim() ?? '');
+        final email = data['email']?.toString() ?? '';
+        final phone = data['phone']?.toString() ?? '';
+        final address = data['address']?.toString() ?? '';
+        final deviceId =
+            (data['deviceId']?.toString().trim().isNotEmpty == true)
+                ? data['deviceId']?.toString() ?? ''
+                : (data['device_id']?.toString().trim() ?? '');
+
+        final emailVerified = data['emailVerified'] == true;
+
+        _nameCtrl.text = fullName;
+        _emailCtrl.text = email;
+        _phoneCtrl.text = phone;
+        _addressCtrl.text = address;
+        _deviceIdCtrl.text = deviceId;
+
+        setState(() => _isEmailVerified = emailVerified);
+      }
+    } catch (_) {
+      // Abaikan dulu (biar UI tetap tampil)
+    }
+  }
+
+  Future<void> _changePassword() async {
+    final oldPassword = _oldPassCtrl.text;
+    final newPassword = _newPassCtrl.text;
+    final confirmNewPassword = _confirmPassCtrl.text;
+
+    // Validasi sederhana di sisi UI
+    if (oldPassword.isEmpty ||
+        newPassword.isEmpty ||
+        confirmNewPassword.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Isi Current Password, New Password, dan Confirm New Password.',
+            style: GoogleFonts.poppins(fontSize: 13),
+          ),
+          backgroundColor: AppColors.accentRed,
+        ),
+      );
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Password baru minimal 6 karakter.',
+            style: GoogleFonts.poppins(fontSize: 13),
+          ),
+          backgroundColor: AppColors.accentRed,
+        ),
+      );
+      return;
+    }
+
+    if (newPassword != confirmNewPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Konfirmasi password tidak cocok.',
+            style: GoogleFonts.poppins(fontSize: 13),
+          ),
+          backgroundColor: AppColors.accentRed,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final api = await ApiService.putJson(
+        '/api/users/change-password',
+        body: {
+          'oldPassword': oldPassword,
+          'newPassword': newPassword,
+          'confirmNewPassword': confirmNewPassword,
+        },
+        auth: true,
+      );
+
+      if (!mounted) return;
+
+      if (api['success'] == true) {
+        _oldPassCtrl.clear();
+        _newPassCtrl.clear();
+        _confirmPassCtrl.clear();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              api['message']?.toString() ?? 'Password berhasil diubah!',
+              style: GoogleFonts.poppins(fontSize: 13),
+            ),
+            backgroundColor: AppColors.accentGreen,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              api['message']?.toString() ?? 'Gagal mengubah password.',
+              style: GoogleFonts.poppins(fontSize: 13),
+            ),
+            backgroundColor: AppColors.accentRed,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Terjadi kesalahan: $e',
+            style: GoogleFonts.poppins(fontSize: 13),
+          ),
+          backgroundColor: AppColors.accentRed,
+        ),
+      );
+    }
+  }
+
+  // Fungsi untuk verifikasi email (endpoint auth required)
   void _verifyEmail() async {
-    // Menampilkan loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -54,42 +196,130 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: CircularProgressIndicator(),
       ),
     );
-    // Simulasi delay jaringan
-    await Future.delayed(const Duration(seconds: 1));
-    if (mounted) {
-      Navigator.pop(context); // Tutup dialog loading
-      setState(() => _isEmailVerified = true);
-      // Menampilkan notifikasi sukses verifikasi
+
+    try {
+      final api = await ApiService.postJson(
+        '/api/auth/verify-email',
+        body: {},
+        auth: true,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      if (api['success'] == true) {
+        setState(() => _isEmailVerified = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Email verified successfully!',
+              style: GoogleFonts.poppins(fontSize: 13),
+            ),
+            backgroundColor: AppColors.online,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(api['message']?.toString() ?? 'Verify failed'),
+            backgroundColor: AppColors.accentRed,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Email verified successfully!',
-            style: GoogleFonts.poppins(fontSize: 13),
-          ),
-          backgroundColor: AppColors.online,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          content: Text('Terjadi kesalahan: $e'),
+          backgroundColor: AppColors.accentRed,
         ),
       );
     }
   }
 
   // Fungsi untuk menyimpan perubahan profil
-  void _saveProfile() {
-    setState(() => _isEditing = false); // Nonaktifkan mode edit
-    // Tampilkan notifikasi berhasil disimpan
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Profile updated!',
-          style: GoogleFonts.poppins(fontSize: 13),
+  void _saveProfile() async {
+    try {
+      final api = await ApiService.putJson(
+        '/api/users/profile',
+        body: {
+          'fullName': _nameCtrl.text.trim(),
+          'phone': _phoneCtrl.text.trim(),
+          'address': _addressCtrl.text.trim(),
+          'email': _emailCtrl.text.trim(),
+          'deviceId': _deviceIdCtrl.text.trim(),
+        },
+        auth: true,
+      );
+
+      // backend untuk update profile menggunakan PUT, bukan POST.
+      // fallback ditangani di bawah via PUT jika diperlukan.
+      if (api['success'] != true) {
+        throw Exception(api['message']?.toString() ?? 'Update profile failed');
+      }
+
+      if (!mounted) return;
+
+      setState(() => _isEditing = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Profile updated!',
+            style: GoogleFonts.poppins(fontSize: 13),
+          ),
+          backgroundColor: AppColors.accentGreen,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        backgroundColor: AppColors.accentGreen,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+      );
+    } catch (_) {
+      // Jalankan PUT yang benar
+      try {
+        final api = await ApiService.putJson(
+          '/api/users/profile',
+          body: {
+            'fullName': _nameCtrl.text.trim(),
+            'phone': _phoneCtrl.text.trim(),
+            'address': _addressCtrl.text.trim(),
+            'email': _emailCtrl.text.trim(),
+            'deviceId': _deviceIdCtrl.text.trim(),
+          },
+          auth: true,
+        );
+
+        if (api['success'] == true && mounted) {
+          setState(() => _isEditing = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Profile updated!',
+                style: GoogleFonts.poppins(fontSize: 13),
+              ),
+              backgroundColor: AppColors.accentGreen,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Terjadi kesalahan: $e'),
+            backgroundColor: AppColors.accentRed,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -142,8 +372,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: Colors.white, width: 2.5),
+                              border:
+                                  Border.all(color: Colors.white, width: 2.5),
                             ),
                             child: const Icon(Icons.person,
                                 color: Colors.white, size: 42),
@@ -322,6 +552,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icons.lock_outline,
                         isPassword: true,
                       ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: OutlinedButton(
+                          onPressed: _changePassword,
+                          child: Text(
+                            'Update Password',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -355,12 +600,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   width: double.infinity,
                   height: 54,
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      // Hapus semua rute sebelumnya dan navigasi ke halaman Login
+                    onPressed: () async {
+                      try {
+                        await ApiService.postJson(
+                          '/api/auth/logout',
+                          body: {},
+                          auth: true,
+                        );
+                      } catch (_) {
+                        // abaikan error logout backend
+                      } finally {
+                        await TokenStorage.clearToken();
+                      }
+
+                      if (!mounted) return;
+
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(
-                            builder: (_) => const LoginScreen()),
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
                         (route) => false,
                       );
                     },

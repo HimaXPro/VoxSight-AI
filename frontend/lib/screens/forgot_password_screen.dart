@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/api_service.dart';
 import '../utils/app_theme.dart';
 import '../widgets/common_widgets.dart';
+import 'otp_reset_password_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -23,26 +25,88 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     // Memeriksa apakah inputan pada form sudah valid
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      // Mensimulasikan proses jaringan dengan delay
-      await Future.delayed(const Duration(milliseconds: 1500));
-      if (mounted) {
-        setState(() => _isLoading = false);
-        // Menampilkan pesan sukses menggunakan SnackBar
+      try {
+        final email = _emailCtrl.text.trim();
+
+        final res = await ApiService.postJson(
+          '/api/auth/forgot-password',
+          body: {'email': email},
+          auth: false,
+        );
+
+        if (!mounted) return;
+
+        final success = res['success'] == true;
+        if (success) {
+          final data = res['data'] ?? {};
+          final resetCode = data['resetCode']?.toString() ?? '';
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                (res['message']?.toString() ?? 'OTP generated!') +
+                    (resetCode.isNotEmpty ? '\nKode OTP: $resetCode' : ''),
+                style: GoogleFonts.poppins(fontSize: 13),
+              ),
+              backgroundColor: AppColors.online,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+
+          if (resetCode.isEmpty) {
+            // fallback jika backend tidak mengembalikan resetCode
+            Navigator.pop(context);
+            return;
+          }
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => OtpResetPasswordScreen(
+                email: email,
+                resetCode: resetCode,
+              ),
+            ),
+          );
+        } else {
+          final message =
+              res['message']?.toString() ?? 'Failed to send reset link';
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                message,
+                style: GoogleFonts.poppins(fontSize: 13),
+              ),
+              backgroundColor: AppColors.offline,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Reset link sent to your email!',
+              'Terjadi kesalahan saat mengirim reset link.',
               style: GoogleFonts.poppins(fontSize: 13),
             ),
-            backgroundColor: AppColors.online,
+            backgroundColor: AppColors.offline,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
           ),
         );
-        // Kembali ke halaman sebelumnya setelah berhasil
-        Navigator.pop(context);
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
       }
     }
   }
@@ -151,7 +215,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       PrimaryButton(
                         text: 'Send Reset Link',
                         onPressed: _sendResetLink,
-                        isLoading: _isLoading, // Tampilkan loading indicator jika true
+                        isLoading:
+                            _isLoading, // Tampilkan loading indicator jika true
                         icon: Icons.send_outlined,
                       ),
                     ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../utils/app_theme.dart';
 import '../widgets/common_widgets.dart';
+import '../services/api_service.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -31,31 +32,81 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // Fungsi untuk memproses pendaftaran
   void _register() async {
-    // Validasi semua field yang diperlukan
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      // Simulasi proses jaringan
-      await Future.delayed(const Duration(milliseconds: 1500));
-      if (mounted) {
-        setState(() => _isLoading = false);
-        // Menampilkan pesan sukses pendaftaran
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Akun berhasil dibuat! Silakan login.',
-              style: GoogleFonts.poppins(fontSize: 13),
+
+      try {
+        final api = await ApiService.postJson(
+          '/api/auth/register',
+          body: {
+            'fullName': _nameCtrl.text.trim(),
+            'email': _emailCtrl.text.trim(),
+            'phone': _phoneCtrl.text.trim(),
+            'deviceId': _deviceIdCtrl.text.trim().isEmpty
+                ? null
+                : _deviceIdCtrl.text.trim(),
+            'role': _selectedRole,
+            'password': _passCtrl.text,
+            'confirmPassword': _confirmCtrl.text,
+          },
+        );
+
+        if (api['success'] != true) {
+          final msg = api['message']?.toString() ?? 'Register gagal';
+          if (mounted) {
+            setState(() => _isLoading = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(msg, style: GoogleFonts.poppins(fontSize: 13)),
+                backgroundColor: AppColors.accentRed,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+          }
+          return;
+        }
+
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Akun berhasil dibuat! Silakan login.',
+                style: GoogleFonts.poppins(fontSize: 13),
+              ),
+              backgroundColor: AppColors.online,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            backgroundColor: AppColors.online,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-        // Navigasi ke halaman login setelah registrasi berhasil
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
+          );
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Terjadi kesalahan: $e',
+                style: GoogleFonts.poppins(fontSize: 13),
+              ),
+              backgroundColor: AppColors.accentRed,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
       }
     }
   }
@@ -89,7 +140,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [AppColors.primaryDark, AppColors.primary], // Gradien utama
+                    colors: [
+                      AppColors.primaryDark,
+                      AppColors.primary
+                    ], // Gradien utama
                   ),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(32),
@@ -151,8 +205,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         hint: 'Enter your full name',
                         prefixIcon: Icons.person_outline,
                         controller: _nameCtrl,
-                        validator: (v) =>
-                            v!.isEmpty ? 'Name is required' : null, // Validasi kosong
+                        validator: (v) => v!.isEmpty
+                            ? 'Name is required'
+                            : null, // Validasi kosong
                       ),
                       const SizedBox(height: 16),
                       _label('Email Address'), // Input Email

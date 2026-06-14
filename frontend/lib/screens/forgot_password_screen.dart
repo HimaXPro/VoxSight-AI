@@ -44,8 +44,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                (res['message']?.toString() ?? 'OTP generated!') +
-                    (resetCode.isNotEmpty ? '\nKode OTP: $resetCode' : ''),
+                res['message']?.toString() ?? 'OTP generated!',
                 style: GoogleFonts.poppins(fontSize: 13),
               ),
               backgroundColor: AppColors.online,
@@ -73,7 +72,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           );
         } else {
           final message =
-              res['message']?.toString() ?? 'Failed to send reset link';
+              res['message']?.toString() ?? 'Failed to send reset code';
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -213,7 +212,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       const SizedBox(height: 32),
                       // Tombol Submit Reset Link
                       PrimaryButton(
-                        text: 'Send Reset Link',
+                        text: 'Send Reset Code',
                         onPressed: _sendResetLink,
                         isLoading:
                             _isLoading, // Tampilkan loading indicator jika true
